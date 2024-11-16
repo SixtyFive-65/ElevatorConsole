@@ -6,7 +6,7 @@ class Program
 {
     static void Main()
     {
-        var elevatorId = 1;
+        var elevatorId = 1;   //we can allow the capture of elevators and floors
         var totalFloors = 10;
 
         try
@@ -15,7 +15,7 @@ class Program
 
             Console.WriteLine("Starting Elevator Simulation...");
 
-            var elevator = new PassengerElevator(elevatorId, totalFloors);
+            var elevator = new PassengerElevator(elevatorId, totalFloors);  // From Elevator Base, we can create different elevator types
 
             building.Elevators.Add(elevator);
 
