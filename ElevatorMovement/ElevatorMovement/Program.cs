@@ -1,4 +1,5 @@
-﻿using ElevatorMovement.Services.Implementation;
+﻿using ElevatorMovement.Services.Base;
+using ElevatorMovement.Services.Implementation;
 using ElevatorMovement.Services.Interface;
 
 class Program
@@ -21,15 +22,16 @@ class Program
             while (true)
             {
                 var currentFloor = ReadCurrentFloor(totalFloors, "Current");
-
                 var destinationFloor = ReadCurrentFloor(totalFloors, "Destination");
 
-                Passenger passenger = new Passenger(currentFloor, destinationFloor);
-                passenger.RequestElevator(building);
+                // Request the elevator
+                elevator.RequestElevator(currentFloor, destinationFloor);
 
+                // Move the elevator and process requests
                 foreach (var e in building.Elevators)
                 {
                     e.Move();
+                    Console.WriteLine($"Elevator {e.Id} currently has {((Elevator)e).GetPassengerCount()} passengers.");
                 }
             }
         }
@@ -41,12 +43,10 @@ class Program
 
     static int ReadCurrentFloor(int totalFloors, string floorDescription)
     {
-        int floor;
-
         do
         {
             Console.WriteLine($"Enter the {floorDescription} floor (1 to {totalFloors}):");
-            if (int.TryParse(Console.ReadLine(), out floor) && floor > 0 && floor <= totalFloors)
+            if (int.TryParse(Console.ReadLine(), out int floor) && floor > 0 && floor <= totalFloors)
             {
                 return floor;
             }
