@@ -1,4 +1,5 @@
 ﻿using ElevatorMovement.Services.Implementation;
+using Serilog;
 
 namespace ElevatorMovement.Services.Base
 {
@@ -16,11 +17,11 @@ namespace ElevatorMovement.Services.Base
         public Elevator(int id, int totalFloors)
         {
             Id = id;
-            CurrentFloor = 1; 
+            CurrentFloor = 1;
             this.TotalFloors = totalFloors;
         }
 
-        public void AddRequest(int floor)
+        public async Task AddRequest(int floor)
         {
             if (!Requests.Contains(floor))
             {
@@ -28,7 +29,7 @@ namespace ElevatorMovement.Services.Base
             }
         }
 
-        public void Move()
+        public async Task Move()
         {
             try
             {
@@ -36,62 +37,75 @@ namespace ElevatorMovement.Services.Base
                 {
                     if (Requests.Any())
                     {
-                        int targetFloor = Requests.Dequeue();  
+                        Requests = new Queue<int>(Requests.OrderBy(f => f));
+
+                        int targetFloor = Requests.Dequeue();
 
                         while (CurrentFloor != targetFloor)
                         {
                             if (CurrentFloor < targetFloor)
                             {
                                 CurrentFloor++;
-                                Console.WriteLine($"Elevator {Id} moving up to floor {CurrentFloor}");
+                                LogInformation($"Elevator {Id} moving up to floor {CurrentFloor}");
                             }
                             else if (CurrentFloor > targetFloor)
                             {
                                 CurrentFloor--;
-                                Console.WriteLine($"Elevator {Id} moving down to floor {CurrentFloor}");
+                                LogInformation($"Elevator {Id} moving down to floor {CurrentFloor}");
                             }
 
-                            Console.WriteLine($"Elevator {Id} is at floor {CurrentFloor}");
+                            LogInformation($"Elevator {Id} is at floor {CurrentFloor}");
 
-                            Thread.Sleep(3000); // It takes 3 seconds to move to the next floor
+                            Thread.Sleep(2000); // It takes 2 seconds to move to the next floor
                         }
 
-                        ExitPassengersAtFloor(CurrentFloor);
-                        AddPassengersAtFloor(CurrentFloor);
+                        await ExitPassengersAtFloor(CurrentFloor);
+                        await AddPassengersAtFloor(CurrentFloor);
 
-                        Console.WriteLine($"Elevator {Id} reached floor {CurrentFloor} and opened doors.");
+                        LogInformation($"Elevator {Id} reached floor {CurrentFloor} and openned doors.");
                     }
                 }
 
-                Console.WriteLine($"Elevator {Id} is at floor {CurrentFloor}.");
+                LogInformation($"Elevator {Id} is at floor {CurrentFloor}.");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e?.InnerException?.ToString() ?? e?.Message);
+                Console.WriteLine("An unexpected error occurred. Please try again.");
+
+                Log.Logger.Error(ex?.InnerException?.ToString() ?? ex?.Message);
             }
         }
 
-        public void AddPassengersAtFloor(int floor)
+        public async Task AddPassengersAtFloor(int floor)
         {
-            var boardingPassengers = WaitingPassengers.Where(p => p.CurrentFloor == floor).ToList();
+            var boardingPassengers = WaitingPassengers.Where(p => p.CurrentFloor == floor).ToList();  //Would await this call if we called an API or database call
 
             foreach (var passenger in boardingPassengers)
             {
                 Passengers.Add(passenger);
-                WaitingPassengers.Remove(passenger);  
-                passenger.HasEnteredElevator = true; 
-                Console.WriteLine($"Passenger entered the elevator at floor {floor}. Passenger count: {GetPassengerCount()}");
+                WaitingPassengers.Remove(passenger);
+                passenger.HasEnteredElevator = true;
+                LogInformation($"Passenger entered the elevator at floor {floor}. Passenger count: {GetPassengerCount()}");
             }
         }
 
-        public void ExitPassengersAtFloor(int floor)
+        public async Task ExitPassengersAtFloor(int floor)
         {
-            var exitingPassengers = Passengers.Where(p => p.DestinationFloor == floor).ToList();
-
-            foreach (var passenger in exitingPassengers)
+            try
             {
-                Passengers.Remove(passenger);
-                Console.WriteLine($"Passenger exited the elevator at floor {floor}. Passenger count: {GetPassengerCount()}");
+                var exitingPassengers = Passengers.Where(p => p.DestinationFloor == floor).ToList(); //Would await this call if we called an API or database call
+
+                foreach (var passenger in exitingPassengers)
+                {
+                    Passengers.Remove(passenger);
+                    LogInformation($"Passenger exited the elevator at floor {floor}. Passenger count: {GetPassengerCount()}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An unexpected error occurred. Please try again.");
+
+                Log.Logger.Error(ex?.InnerException?.ToString() ?? ex?.Message);
             }
         }
 
@@ -100,16 +114,31 @@ namespace ElevatorMovement.Services.Base
             return Passengers.Count;
         }
 
-        public void RequestElevator(int currentFloor, int destinationFloor)
+        public async Task RequestElevator(int currentFloor, int destinationFloor)
         {
-            AddRequest(currentFloor);
-            AddRequest(destinationFloor);
+            try
+            {
+                await AddRequest(currentFloor);
+                await AddRequest(destinationFloor);
 
-            var passenger = new Passenger(currentFloor, destinationFloor);
-            WaitingPassengers.Add(passenger);
+                var passenger = new Passenger(currentFloor, destinationFloor);
+                WaitingPassengers.Add(passenger);
 
-            Console.WriteLine($"Passenger requested elevator to go from {currentFloor} to {destinationFloor}. Waiting passengers: {WaitingPassengers.Count}");
+                LogInformation($"Passenger requested elevator to go from {currentFloor} to {destinationFloor}. Waiting passengers: {WaitingPassengers.Count}");
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine("An unexpected error occurred. Please try again.");
+
+                Log.Logger.Error(ex?.InnerException?.ToString() ?? ex?.Message);
+            }
+        }
+
+        public void LogInformation(string message)
+        {
+            Log.Logger.Information(message);
+            Console.WriteLine(message);
         }
     }
 }
-   
