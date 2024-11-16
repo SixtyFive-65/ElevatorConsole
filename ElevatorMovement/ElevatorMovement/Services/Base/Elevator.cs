@@ -7,11 +7,11 @@ namespace ElevatorMovement.Services.Base
         public int Id { get; }
         public int CurrentFloor { get; private set; }
         private readonly int TotalFloors;
-        private Queue<int> Requests = new Queue<int>();
+        protected Queue<int> Requests = new Queue<int>();
 
-        private readonly List<Passenger> Passengers = new List<Passenger>();
+        protected readonly List<Passenger> Passengers = new List<Passenger>();
 
-        private readonly List<Passenger> WaitingPassengers = new List<Passenger>();
+        protected readonly List<Passenger> WaitingPassengers = new List<Passenger>();
 
         public Elevator(int id, int totalFloors)
         {
@@ -71,7 +71,7 @@ namespace ElevatorMovement.Services.Base
             }
         }
 
-        private void AddPassengersAtFloor(int floor)
+        public void AddPassengersAtFloor(int floor)
         {
             var boardingPassengers = WaitingPassengers.Where(p => p.CurrentFloor == floor).ToList();
 
@@ -84,7 +84,7 @@ namespace ElevatorMovement.Services.Base
             }
         }
 
-        private void ExitPassengersAtFloor(int floor)
+        public void ExitPassengersAtFloor(int floor)
         {
             var exitingPassengers = Passengers.Where(p => p.DestinationFloor == floor).ToList();
 
