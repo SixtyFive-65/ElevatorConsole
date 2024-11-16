@@ -6,7 +6,6 @@ namespace ElevatorMovement.Services.Interface
     {
         int CurrentFloor { get; }
         int DestinationFloor { get; }
-
-        void RequestElevator(Building building);
+        void RequestElevator(IBuilding building);
     }
 }

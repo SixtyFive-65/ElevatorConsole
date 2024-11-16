@@ -1,13 +1,11 @@
-﻿using ElevatorMovement.Services.Implementation;
+﻿using ElevatorMovement.Services.Base;
 
 namespace ElevatorMovement.Services.Interface
 {
     public interface IBuilding
     {
-        List<Elevator> Elevators { get; }
         int TotalFloors { get; }
-
-        Elevator GetClosestElevator(int floor);
-        void StartSimulation();
+        List<IElevator> Elevators { get; }
+        IElevator GetClosestElevator(int floor);
     }
 }

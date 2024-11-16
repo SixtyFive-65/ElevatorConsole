@@ -1,10 +1,9 @@
-﻿namespace ElevatorMovement.Services.Interface
+﻿namespace ElevatorMovement.Services.Base
 {
     public interface IElevator
     {
-        int CurrentFloor { get; }
         int Id { get; }
-
+        int CurrentFloor { get; }
         void AddRequest(int floor);
         void Move();
     }
