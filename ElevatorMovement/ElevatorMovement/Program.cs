@@ -15,6 +15,7 @@ class Program
     {
         const int elevatorId = 1;   //we can allow the capture of elevators and floors
         const int totalFloors = 10;
+        const int maxPassengerCount = 10;
 
         try
         {
@@ -22,7 +23,7 @@ class Program
 
             IBuilding building = new Building(totalFloors);
 
-            var elevator = new PassengerElevator(elevatorId, totalFloors);  // From Elevator Base, we can create different elevator types
+            var elevator = new PassengerElevator(elevatorId, totalFloors, maxPassengerCount);  // From Elevator Base, we can create different elevator types
 
             building.Elevators.Add(elevator);
 

@@ -14,11 +14,14 @@ namespace ElevatorMovement.Services.Base
 
         protected readonly List<Passenger> WaitingPassengers = new List<Passenger>();
 
-        public Elevator(int id, int totalFloors)
+        private readonly int MaxPassengerCount;  //default : can be made an appsetting
+
+        public Elevator(int id, int totalFloors, int maxPassengerCount)
         {
             Id = id;
             CurrentFloor = 1;
             this.TotalFloors = totalFloors;
+            MaxPassengerCount = maxPassengerCount;
         }
 
         public async Task AddRequest(int floor)
@@ -62,7 +65,7 @@ namespace ElevatorMovement.Services.Base
                         await ExitPassengersAtFloor(CurrentFloor);
                         await AddPassengersAtFloor(CurrentFloor);
 
-                        LogInformation($"Elevator {Id} reached floor {CurrentFloor} and openned doors.");
+                        LogInformation($"Elevator {Id} reached floor {CurrentFloor} and opened doors.");
                     }
                 }
 
@@ -78,14 +81,21 @@ namespace ElevatorMovement.Services.Base
 
         public async Task AddPassengersAtFloor(int floor)
         {
-            var boardingPassengers = WaitingPassengers.Where(p => p.CurrentFloor == floor).ToList();  //Would await this call if we called an API or database call
+            var boardingPassengers = WaitingPassengers.Where(p => p.CurrentFloor == floor).ToList();
 
             foreach (var passenger in boardingPassengers)
             {
-                Passengers.Add(passenger);
-                WaitingPassengers.Remove(passenger);
-                passenger.HasEnteredElevator = true;
-                LogInformation($"Passenger entered the elevator at floor {floor}. Passenger count: {GetPassengerCount()}");
+                if (GetPassengerCount() < MaxPassengerCount)
+                {
+                    Passengers.Add(passenger);
+                    WaitingPassengers.Remove(passenger);
+                    passenger.HasEnteredElevator = true;
+                    LogInformation($"Passenger entered the elevator at floor {floor}. Passenger count: {GetPassengerCount()}");
+                }
+                else
+                {
+                    LogInformation($"Elevator is full. Passenger cannot board at floor {floor}. Passenger count: {GetPassengerCount()}");
+                }
             }
         }
 
@@ -93,7 +103,7 @@ namespace ElevatorMovement.Services.Base
         {
             try
             {
-                var exitingPassengers = Passengers.Where(p => p.DestinationFloor == floor).ToList(); //Would await this call if we called an API or database call
+                var exitingPassengers = Passengers.Where(p => p.DestinationFloor == floor).ToList();
 
                 foreach (var passenger in exitingPassengers)
                 {
@@ -122,11 +132,18 @@ namespace ElevatorMovement.Services.Base
                 await AddRequest(destinationFloor);
 
                 var passenger = new Passenger(currentFloor, destinationFloor);
-                WaitingPassengers.Add(passenger);
 
-                LogInformation($"Passenger requested elevator to go from {currentFloor} to {destinationFloor}. Waiting passengers: {WaitingPassengers.Count}");
+                // Ensure the passenger only gets added if the elevator has room
+                if (GetPassengerCount() < MaxPassengerCount)
+                {
+                    WaitingPassengers.Add(passenger);
+                    LogInformation($"Passenger requested elevator to go from {currentFloor} to {destinationFloor}. Waiting passengers: {WaitingPassengers.Count}");
+                }
+                else
+                {
+                    LogInformation($"Elevator is full. Passenger request from {currentFloor} to {destinationFloor} cannot be added.");
+                }
             }
-
             catch (Exception ex)
             {
                 Console.WriteLine("An unexpected error occurred. Please try again.");
